@@ -1,0 +1,18 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.slnLaunch.user
+
+# Build output
+**/bin/
+**/obj/
+
+# Development settings
+**/appsettings.Development.json
+
+# Environment variables
+**/.env
+
+# IDE
+.idea/

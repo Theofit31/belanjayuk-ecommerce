@@ -1,0 +1,74 @@
+﻿@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Auth.LoginModel
+@{
+    ViewData["Title"] = "Login - BelanjaYuk";
+}
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div class="max-w-5xl w-full bg-white rounded-2xl shadow-lg p-8 grid md:grid-cols-2 gap-8">
+
+        <div class="hidden md:flex flex-col justify-center items-start p-6">
+            <div class="bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-xl p-6 mb-4 w-full">
+                <h3 class="text-lg font-semibold mb-2">BelanjaYuk – Lebih fun, lebih cepat</h3>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    <span class="bg-white text-blue-600 px-2 py-1 rounded-full">Gratis Ongkir</span>
+                    <span class="bg-white text-blue-600 px-2 py-1 rounded-full">Bayar COD</span>
+                    <span class="bg-white text-blue-600 px-2 py-1 rounded-full">Promo Harian</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- login form -->
+        <div>
+            <h1 class="text-2xl font-bold text-blue-700 mb-2">BelanjaYuk</h1>
+            <h2 class="text-xl font-semibold mb-2">Hai, selamat datang kembali 👋</h2>
+            <p class="text-gray-500 mb-6">Masuk pakai email atau no. HP yang terdaftar.</p>
+
+            @if (Model.Message != null)
+            {
+            <div class="bg-red-100 text-red-700 p-3 rounded mb-4">@Model.Message</div>
+            }
+
+            <form method="post" class="space-y-4">
+                <div>
+                    <label class="font-medium">Email / No. HP</label>
+                    <input asp-for="Input.EmailOrPhone" class="w-full border rounded-lg p-2 mt-1" placeholder="contoh@mail.com / 0812xxxx" />
+                </div>
+
+                <div>
+                    <label class="font-medium">Kata Sandi</label>
+                    <div class="relative">
+                        <input asp-for="Input.Password" id="password" type="password" class="w-full border rounded-lg p-2 mt-1 pr-10" placeholder="Masukkan kata sandi" />
+                        <button type="button" onclick="togglePassword()" class="absolute right-2 top-2.5 text-gray-500">👁</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" id="remember" class="mr-2"> Ingat saya
+                    </label>
+                    <a href="#" class="text-sm text-blue-600">Lupa kata sandi?</a>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg mt-4 hover:bg-blue-700">
+                    Masuk
+                </button>
+
+                <div class="text-center mt-3">
+                    <a href="/Auth/Register" class="text-blue-600 hover:underline">Belum punya akun? Daftar sekarang</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function togglePassword() {
+            const input = document.getElementById("password");
+            input.type = input.type === "password" ? "text" : "password";
+        }
+    </script>
+}

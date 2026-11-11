@@ -1,0 +1,242 @@
+﻿@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Seller.ProductsModel
+@{
+    ViewData["Title"] = "Manajemen Produk - BelanjaYuk Seller";
+}
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <img src="/img/logo-seller.png" alt="Logo" class="w-6 h-6" />
+            <h1 class="text-lg font-bold text-blue-600">BelanjaYuk Seller</h1>
+        </div>
+        <a href="/Seller/Dashboard" class="text-sm text-gray-600 hover:text-blue-600">← Kembali ke Dashboard</a>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="max-w-6xl mx-auto p-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">@Model.SellerName</h2>
+                <p class="text-sm text-gray-500">ID Toko: @Model.SellerId • Bergabung: @Model.JoinedDate</p>
+            </div>
+            <button onclick="openModal('add')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
+                + Tambah Barang
+            </button>
+        </div>
+
+        <!-- Pencarian -->
+        <div class="flex items-center mb-4">
+            <input type="text" id="searchInput" placeholder="Cari produk..."
+                   class="border rounded-l-lg px-4 py-2 w-full focus:ring-blue-500 focus:border-blue-500" />
+            <button type="button" onclick="searchProduct()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg">
+                Cari
+            </button>
+        </div>
+
+        <!-- Daftar Produk -->
+        <div class="bg-white rounded-xl shadow p-4">
+            @if (Model.Products == null || !Model.Products.Any())
+            {
+            <p class="text-gray-500 text-center py-6">Belum ada produk.</p>
+            }
+            else
+            {
+            <table class="min-w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-700 text-sm uppercase">
+                        <th class="py-3 px-4 text-left">Produk</th>
+                        <th class="py-3 px-4 text-right">Harga</th>
+                        <th class="py-3 px-4 text-center">Stok</th>
+                        <th class="py-3 px-4 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Products)
+                        {
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-3 px-4 flex items-center gap-3">
+                            <img src="@p.ImageUrl" alt="@p.ProductName" class="w-10 h-10 rounded object-cover border" />
+                            <span>@p.ProductName</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">Rp @p.Price.ToString("N0")</td>
+                        <td class="py-3 px-4 text-center @(p.Qty < 5 ? "text-red-500 font-semibold" : "")">@p.Qty</td>
+                        <td class="py-3 px-4 text-center">
+                            <button class="text-blue-600 hover:underline text-sm" onclick="openModal('edit', '@p.IdProduct')">Edit</button> |
+                            <button class="text-red-600 hover:underline text-sm" onclick="deleteProduct('@p.IdProduct')">Hapus</button>
+                        </td>
+                    </tr>
+                        }
+                </tbody>
+            </table>
+            }
+        </div>
+    </main>
+
+    <!-- Modal Form Produk -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
+            <button class="absolute top-3 right-3 text-gray-500 hover:text-gray-800" onclick="closeModal()">✕</button>
+            <h3 id="modalTitle" class="text-lg font-semibold mb-4">Tambah Barang</h3>
+
+            <form method="post" enctype="multipart/form-data" asp-page-handler="SaveProduct">
+                <input type="hidden" name="SellerId" value="@Model.SellerId" />
+                <input type="hidden" asp-for="NewProduct.IdProduct" />
+
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600">Nama Barang</label>
+                    <input asp-for="NewProduct.ProductName" required minlength="3" class="w-full border rounded-lg px-3 py-2" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600">Kategori Barang</label>
+                    <select asp-for="NewProduct.IdCategory" class="w-full border rounded-lg px-3 py-2">
+                        @foreach (var cat in Model.Categories)
+                        {
+                        <option value="@cat.IdCategory">@cat.CategoryName</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600">Deskripsi Barang</label>
+                    <textarea asp-for="NewProduct.ProductDesc" required minlength="10"
+                              class="w-full border rounded-lg px-3 py-2" rows="3"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Harga</label>
+                        <input asp-for="NewProduct.Price" type="number" class="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Diskon (%)</label>
+                        <input asp-for="NewProduct.DiscountPercent" type="number" class="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600">Stok</label>
+                    <input asp-for="NewProduct.Qty" type="number" class="w-full border rounded-lg px-3 py-2" />
+                </div>
+
+                <!-- Upload Gambar -->
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-600">Foto Produk</label>
+                    <input type="file" id="imageInput" name="ProductImages" multiple accept=".jpg,.jpeg,.png"
+                           class="block w-full text-sm text-gray-600 border rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div id="imagePreview" class="flex flex-wrap gap-2 mt-3"></div>
+                    <p class="text-xs text-gray-400 mt-1">Format: JPG/PNG, maksimal 8 foto.</p>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button>
+                </div>
+            </form>
+
+            <script>
+                // Preview gambar
+                document.getElementById("imageInput")?.addEventListener("change", function (e) {
+                    const preview = document.getElementById("imagePreview");
+                    preview.innerHTML = "";
+                    const files = e.target.files;
+                    if (files.length > 8) {
+                        alert("Maksimal 8 gambar yang boleh diunggah.");
+                        e.target.value = "";
+                        return;
+                    }
+                    [...files].forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            const img = document.createElement("img");
+                            img.src = event.target.result;
+                            img.className = "w-16 h-16 object-cover rounded border";
+                            preview.appendChild(img);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal(mode, id = null) {
+        const modal = document.getElementById("modal");
+        const title = document.getElementById("modalTitle");
+        const submitBtn = document.querySelector("button[type='submit']");
+
+        // Ubah judul dan teks tombol
+        title.textContent = mode === "edit" ? "Edit Barang" : "Tambah Barang";
+        submitBtn.textContent = mode === "edit" ? "Perbarui" : "Simpan";
+
+        // Tampilkan modal
+        modal.classList.remove("hidden");
+
+        // Reset form dulu
+        document.querySelector("form").reset();
+        document.getElementById("imagePreview").innerHTML = "";
+        document.querySelector("[name='NewProduct.IdProduct']").value = "";
+
+        // Kalau mode edit, ambil data produk dari API
+        if (mode === "edit" && id) {
+            fetch(`http://localhost:5283/api/v1/seller/@Model.SellerId/products/${id}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Produk tidak ditemukan.");
+                    return res.json();
+                })
+                .then(product => {
+                    // Isi form
+                    document.querySelector("[name='NewProduct.ProductName']").value = product.productName;
+                    document.querySelector("[name='NewProduct.ProductDesc']").value = product.productDesc;
+                    document.querySelector("[name='NewProduct.Price']").value = product.price;
+                    document.querySelector("[name='NewProduct.DiscountPercent']").value = product.discountPercent;
+                    document.querySelector("[name='NewProduct.Qty']").value = product.qty;
+                    document.querySelector("[name='NewProduct.IdCategory']").value = product.idCategory;
+                    document.querySelector("[name='NewProduct.IdProduct']").value = product.idProduct;
+
+                    // Preview gambar lama
+                    const preview = document.getElementById("imagePreview");
+                    preview.innerHTML = "";
+                    if (product.imageUrls && product.imageUrls.length > 0) {
+                        product.imageUrls.forEach(url => {
+                            const img = document.createElement("img");
+                            img.src = url;
+                            img.className = "w-16 h-16 object-cover rounded border";
+                            preview.appendChild(img);
+                        });
+                    }
+                })
+                .catch(err => {
+                    alert(err.message);
+                    closeModal();
+                });
+        }
+    }
+
+    function closeModal() {
+        document.getElementById("modal").classList.add("hidden");
+    }
+
+    async function deleteProduct(id) {
+        if (!confirm("Apakah Anda yakin ingin menghapus produk ini?")) return;
+
+        const sellerId = "@Model.SellerId";
+        const res = await fetch(`http://localhost:5283/api/v1/seller/${sellerId}/products/${id}`, {
+            method: "DELETE"
+        });
+
+        if (res.ok) {
+            alert("Produk berhasil dihapus.");
+            location.reload();
+        } else {
+            alert("Gagal menghapus produk.");
+        }
+    }
+</script>

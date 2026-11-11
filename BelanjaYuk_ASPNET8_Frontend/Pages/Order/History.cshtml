@@ -1,0 +1,160 @@
+﻿@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Order.HistoryModel
+@{
+    ViewData["Title"] = "Riwayat Pesanan";
+}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-gray-50 p-8">
+    <h1 class="text-2xl font-semibold text-blue-600 mb-4">Riwayat Pesanan</h1>
+    <p class="text-gray-500 mb-6">Lihat transaksi yang sudah selesai dan beri ulasan per produk.</p>
+
+    <!-- Filter Tanggal -->
+    <form method="get" class="flex gap-2 mb-6">
+        <input type="date" name="FromDate" value="@Model.FromDate?.ToString(" yyyy-MM-dd")"
+               class="border rounded-lg p-2" />
+        <input type="date" name="ToDate" value="@Model.ToDate?.ToString(" yyyy-MM-dd")"
+               class="border rounded-lg p-2" />
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Terapkan
+        </button>
+    </form>
+
+    @if (Model.Orders.Count == 0)
+    {
+    <p class="text-gray-500 text-center mt-10">Belum ada riwayat pesanan.</p>
+    }
+    else
+    {
+    @foreach (var order in Model.Orders)
+        {
+    <div class="bg-white rounded-xl shadow-sm mb-6 p-4">
+        <div class="flex justify-between items-center mb-2">
+            <p class="font-semibold text-gray-700">INV-@order.Invoice</p>
+            <span class="bg-green-100 text-green-600 text-sm px-3 py-1 rounded-full">Selesai</span>
+        </div>
+        <p class="text-sm text-gray-400 mb-4">@order.DateIn.ToString("yyyy-MM-dd")</p>
+
+        @foreach (var p in order.Products)
+                {
+        <div class="flex items-start gap-3 border-t pt-4 pb-3">
+            <img src="@(p.ProductImage.StartsWith("/") ? $"http://localhost:5283{p.ProductImage}" : p.ProductImage)"
+                 class="w-16 h-16 object-cover rounded-md" />
+            <div class="flex-1">
+                <p class="font-medium">@p.ProductName</p>
+                <p class="text-sm text-gray-500">Qty @p.Qty × Rp @p.PriceProduct.ToString("N0")</p>
+                <p class="font-semibold text-gray-700">Rp @p.Subtotal.ToString("N0")</p>
+
+                <!-- Rating -->
+                <div class="flex items-center mt-2" data-detail-id="@p.IdDetail">
+                    <span class="text-sm text-gray-500 mr-2">Beri rating:</span>
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        var starFilled = i <= (p.Rating ?? 0) ? "text-yellow-400" : "text-gray-300";
+                    <button type="button"
+                            class="star-btn @starFilled text-lg"
+                            data-detail-id="@p.IdDetail"
+                            data-value="@i">
+                        ★
+                    </button>
+                    }
+                </div>
+
+                <!-- Komentar -->
+                <textarea id="comment-@p.IdDetail"
+                          placeholder="Tulis komentar tentang produk ini"
+                          class="border rounded-lg p-2 w-full text-sm mt-2">@p.Comment</textarea>
+
+                <div class="flex gap-2 mt-2">
+                    <button class="send-review bg-blue-600 text-white text-sm px-4 py-1 rounded"
+                            data-id="@p.IdDetail">
+                        Kirim Ulasan
+                    </button>
+                    @if (!string.IsNullOrEmpty(p.Comment) || p.Rating > 0)
+                    {
+                    <button class="delete-review bg-red-100 text-red-600 text-sm px-4 py-1 rounded"
+                            data-id="@p.IdDetail">
+                        Hapus
+                    </button>
+                    }
+                </div>
+            </div>
+        </div>
+                }
+        <div class="flex justify-end border-t pt-3 text-gray-700 font-semibold">
+            Total: Rp @order.FinalPrice.ToString("N0")
+        </div>
+    </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.star-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                const detailId = btn.getAttribute('data-detail-id');
+                const value = parseInt(btn.dataset.value);
+
+                // Ambil hanya bintang untuk produk ini
+                const stars = document.querySelectorAll(`.star-btn[data-detail-id='${detailId}']`);
+                stars.forEach(s => {
+                    const v = parseInt(s.dataset.value);
+                    s.classList.toggle('text-yellow-400', v <= value);
+                    s.classList.toggle('text-gray-300', v > value);
+                });
+
+                // Simpan rating di container
+                const container = document.querySelector(`[data-detail-id='${detailId}']`);
+                if (container) container.setAttribute('data-selected-rating', value);
+            });
+        });
+
+        // Kirim Ulasan
+        document.querySelectorAll('.send-review').forEach(btn => {
+            btn.addEventListener('click', async e => {
+                const id = btn.dataset.id;
+                const container = document.querySelector(`[data-detail-id='${id}']`);
+                const rating = parseInt(container?.dataset.selectedRating || 0);
+                const comment = document.getElementById(`comment-${id}`).value.trim();
+
+                if (rating < 1 || rating > 5) {
+                    alert("Rating wajib diisi (1–5 bintang).");
+                    return;
+                }
+                if (comment && comment.length < 5) {
+                    alert("Komentar terlalu pendek.");
+                    return;
+                }
+                if (comment.length > 1000) {
+                    alert("Komentar maksimal 1000 karakter.");
+                    return;
+                }
+
+                const res = await fetch(`http://localhost:5283/api/v1/orders/${id}/review`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating, comment })
+                });
+
+                const data = await res.json();
+                alert(data.message || 'Ulasan berhasil dikirim.');
+            });
+        });
+
+        // Hapus Ulasan
+        document.querySelectorAll('.delete-review').forEach(btn => {
+            btn.addEventListener('click', async e => {
+                const id = btn.dataset.id;
+                if (!confirm("Hapus ulasan produk ini?")) return;
+
+                const res = await fetch(`http://localhost:5283/api/v1/orders/${id}/review`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                alert(data.message || 'Ulasan dihapus.');
+                location.reload();
+            });
+        });
+    </script>
+}

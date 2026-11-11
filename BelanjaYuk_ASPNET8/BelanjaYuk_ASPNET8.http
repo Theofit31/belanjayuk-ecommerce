@@ -1,0 +1,6 @@
+@BelanjaYuk_ASPNET8_HostAddress = http://localhost:5283
+
+GET {{BelanjaYuk_ASPNET8_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,55 @@
+@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Seller.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard Seller - BelanjaYuk";
+}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-blue-600">BelanjaYuk Seller</h1>
+        </div>
+        <button class="border px-4 py-2 rounded-lg hover:bg-gray-100">Pengaturan Toko</button>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="max-w-5xl mx-auto p-8">
+        <!-- Identitas Toko -->
+        <div class="flex items-center bg-white rounded-2xl shadow p-5 mb-8">
+            <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-lg">
+                @Model.SellerInitial
+            </div>
+            <div class="ml-4">
+                <h2 class="text-lg font-bold text-gray-800">@Model.SellerName</h2>
+                <p class="text-sm text-gray-500">ID Toko: <span class="font-medium text-gray-700">@Model.SellerId</span> • Bergabung hari ini</p>
+            </div>
+        </div>
+
+        <!-- Modul -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Manajemen Barang -->
+            <div class="bg-white rounded-2xl shadow p-6 relative overflow-hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-1">Manajemen Barang</h3>
+                <p class="text-sm text-gray-500 mb-4">Tambah, edit, arsipkan produk. Kelola stok, harga, varian, dan foto.</p>
+
+                <div class="flex items-center justify-between text-sm mb-4">
+                    <div>
+                        <p class="text-gray-500">Produk aktif:</p>
+                        <p class="font-semibold text-gray-800">@Model.ActiveProducts</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Stok menipis:</p>
+                        <p class="font-semibold text-red-600">@Model.LowStock</p>
+                    </div>
+                </div>
+
+                <a href="/Seller/Products" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow">
+                    Buka Modul
+                </a>
+
+            </div>
+        </div>
+    </main>
+</div>

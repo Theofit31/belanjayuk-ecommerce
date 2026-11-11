@@ -1,0 +1,141 @@
+﻿@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Home.IndexModel
+@{
+    ViewData["Title"] = "BelanjaYuk - Beranda";
+}
+@if (TempData["Success"] != null)
+{
+<div id="toast"
+     class="fixed top-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg animate-fade-in">
+    ✅ @TempData["Success"]
+</div>
+}
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold text-blue-600">BelanjaYuk</h1>
+            <form method="get" class="flex items-center ml-4">
+                <input name="SearchQuery" value="@Model.SearchQuery" placeholder="Cari barang apa?"
+                       class="border rounded-l-lg p-2 w-72 focus:outline-blue-400" />
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700">Cari</button>
+            </form>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Tombol ke Keranjang -->
+            <a href="/Cart" class="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200">
+                🛒 <span>Keranjang</span>
+            </a>
+
+            <!-- Tombol ke Pesanan -->
+            <a href="/Order/History" class="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200">
+                📦 <span>Pesanan</span>
+            </a>
+
+            @if (Request.Cookies["seller_name"] != null)
+            {
+                <a href="/Seller/Dashboard" class="border px-3 py-1 rounded-lg hover:bg-gray-100">
+                    @Request.Cookies["seller_name"]
+                </a>
+            }
+            else
+            {
+                <a href="/Seller/Register" class="border px-3 py-1 rounded-lg hover:bg-gray-100">
+                    Daftar Penjual
+                </a>
+            }
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full">
+                    @Model.UserName![0]
+                </div>
+                <div>
+                    <p class="text-sm font-medium">@Model.UserName</p>
+                    <div class="flex gap-2 text-xs text-blue-600">
+                        <a href="/User/Profile">Profil</a>
+                        <a href="/Order/History">Lihat Pesanan</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    <!-- Banner Promo -->
+    <section class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl mx-8 my-6 p-6 shadow-md">
+        <h2 class="text-2xl font-semibold mb-2">Belanja jadi mudah, cepat, dan hemat</h2>
+        <p class="text-sm text-blue-100">Nikmati pengiriman cepat dan banyak pilihan produk favoritmu 🎁</p>
+        <div class="flex flex-wrap gap-2 mt-3">
+            <span class="bg-white/30 px-2 py-1 rounded-lg text-sm">Promo awal bulan</span>
+            <span class="bg-white/30 px-2 py-1 rounded-lg text-sm">Gratis ongkir</span>
+        </div>
+    </section>
+
+    <!-- Filter Kategori -->
+    <div class="flex gap-3 mx-8">
+        @foreach (var cat in Model.Categories)
+        {
+            var active = cat == Model.ActiveCategory ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200";
+        <a href="?category=@cat" class="px-4 py-2 rounded-full @active transition">@cat</a>
+        }
+    </div>
+
+    <!-- Produk -->
+    <section class="mx-8 my-8">
+        <h3 class="text-lg font-semibold mb-4">Barang Rekomendasi</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            @if (Model.Products.Count == 0)
+            {
+            <p class="col-span-full text-center text-gray-500">Tidak ada produk ditemukan.</p>
+            }
+            else
+            {
+                foreach (var p in Model.Products)
+                {
+        <div class="bg-white p-4 rounded-xl shadow hover:shadow-md transition">
+            <img src="@(p.Images != null && p.Images.Count > 0 && !string.IsNullOrWhiteSpace(p.Images[0])
+                ? (p.Images[0].StartsWith("/") ? $"http://localhost:5283{p.Images[0]}" : p.Images[0])
+                : "http://localhost:5283/img/no-image.jpg")"
+                alt="@p.ProductName"
+                class="w-full h-40 object-cover rounded-lg mb-3" />
+
+            <h4 class="font-semibold truncate">@p.ProductName</h4>
+            <p class="text-blue-600 font-bold">Rp @p.Price.ToString("N0")</p>
+
+            <div class="text-sm text-gray-500 flex items-center gap-1">
+                ⭐ @p.AvgRating.ToString("0.0") <span>• Terjual @p.Sold</span>
+            </div>
+            <form method="post" asp-page-handler="AddToCart" class="mt-3">
+                <input type="hidden" name="productId" value="@p.IdProduct" />
+                <button type="submit" class="bg-blue-600 text-white w-full py-2 rounded-lg hover:bg-blue-700">
+                    Tambah
+                </button>
+            </form>
+        </div>
+                }
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        // Validasi kolom pencarian
+        document.querySelector("form").addEventListener("submit", function (e) {
+            const input = this.querySelector("input[name='SearchQuery']");
+            const invalid = /^[\s<>/{}]*$/;
+            if (invalid.test(input.value)) {
+                alert("Masukkan kata kunci pencarian yang valid!");
+                e.preventDefault();
+            }
+        });
+        // Toast auto-hide setelah 3 detik
+        const toast = document.getElementById("toast");
+        if (toast) {
+            setTimeout(() => toast.style.display = "none", 3000);
+        }
+    </script>
+}

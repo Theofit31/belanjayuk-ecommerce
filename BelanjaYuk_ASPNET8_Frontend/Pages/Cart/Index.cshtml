@@ -1,0 +1,240 @@
+﻿@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Cart.IndexModel
+@{
+    ViewData["Title"] = "Keranjang Belanja";
+}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-gray-50 p-8">
+    <h1 class="text-2xl font-semibold text-blue-600 mb-6">Keranjang Belanja</h1>
+
+    @if (TempData["Error"] != null)
+    {
+    <div class="bg-red-100 text-red-700 p-3 mb-4 rounded">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+    <div class="bg-green-100 text-green-700 p-3 mb-4 rounded">@TempData["Success"]</div>
+    }
+
+    @if (Model.CartItems.Count == 0)
+    {
+    <p class="text-gray-500 text-center mt-20">Keranjang kosong.</p>
+    }
+    else
+    {
+    <div class="grid md:grid-cols-3 gap-8">
+        <!-- DAFTAR PRODUK -->
+        <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+            @foreach (var item in Model.CartItems)
+                {
+            <div class="flex items-center gap-4 border-b py-4 cart-item" data-id="@item.IdBuyerCart">
+                <img src="@(item.ImageUrl.StartsWith("/") ? $"http://localhost:5283{item.ImageUrl}" : item.ImageUrl)"
+                     class="w-16 h-16 object-cover rounded-lg" />
+                <div class="flex-1">
+                    <p class="font-semibold">@item.ProductName</p>
+                    @if (item.DiscountPercent > 0)
+                            {
+                    <p class="text-sm text-gray-400 line-through">
+                        Rp @item.PriceNormal.ToString("N0")
+                    </p>
+                    <p class="text-blue-600 font-bold">
+                        Rp @item.FinalPrice.ToString("N0")
+                        <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded ml-2">
+                            Diskon @item.DiscountPercent%
+                        </span>
+                    </p>
+                            }
+                            else
+                            {
+                    <p class="text-blue-600 font-bold">Rp @item.FinalPrice.ToString("N0")</p>
+                            }
+                </div>
+
+                <!-- Kontrol Qty -->
+                <div class="flex items-center gap-2">
+                    <button class="qty-btn px-2 bg-gray-200 rounded" data-action="minus">−</button>
+                    <span class="qty">@item.Qty</span>
+                    <button class="qty-btn px-2 bg-gray-200 rounded" data-action="plus">+</button>
+                </div>
+
+                <div class="flex flex-col items-end">
+                    <p class="subtotal text-gray-700 font-medium mb-1">
+                        Rp @item.Subtotal.ToString("N0")
+                    </p>
+                    <button class="text-red-500 text-xs hover:underline remove-btn" data-id="@item.IdBuyerCart">
+                        Hapus
+                    </button>
+                </div>
+            </div>
+                }
+        </div>
+
+        <!-- RINGKASAN -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="font-semibold text-lg mb-4">Ringkasan</h2>
+
+            <div class="text-sm text-gray-600 space-y-1 mb-4">
+                <div class="flex justify-between">
+                    <span>Subtotal</span>
+                    <span id="subtotal-price">Rp @Model.CartItems.Sum(i => i.PriceNormal * i.Qty).ToString("N0")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Diskon</span>
+                    <span class="text-red-600" id="discount-amount">- Rp @Model.CartItems.Sum(i => (i.PriceNormal - i.FinalPrice) * i.Qty).ToString("N0")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Biaya Pengiriman</span>
+                    <span id="shipping-fee">Rp 0</span>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 my-3"></div>
+
+            <div class="flex justify-between font-semibold text-gray-800 text-lg mb-4">
+                <span>Total</span>
+                <span id="total-price">Rp @Model.TotalKeseluruhan.ToString("N0")</span>
+            </div>
+
+            <form method="post" asp-page-handler="Checkout">
+                <h3 class="text-sm font-semibold mb-2">Metode Pembayaran</h3>
+                @foreach (var pay in Model.Payments)
+        {
+                <label class="flex items-center gap-2 text-sm mb-1">
+                    <input type="radio" name="SelectedPayment" value="@pay.IdPayment" /> @pay.PaymentName
+                </label>
+        }
+
+                <button type="submit"
+                        class="bg-blue-600 text-white w-full py-2 rounded-lg mt-4 hover:bg-blue-700">
+                    Beli Barang
+                </button>
+            </form>
+        </div>
+    </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+    document.querySelectorAll('.qty-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const action = btn.dataset.action;
+            const parent = btn.closest('.cart-item');
+            const qtyElement = parent.querySelector('.qty');
+            const subtotalElement = parent.querySelector('.subtotal');
+            const id = parent.dataset.id;
+
+            let qty = parseInt(qtyElement.textContent);
+            qty = action === 'plus' ? qty + 1 : qty - 1;
+            if (qty < 1 || qty > 99) return;
+
+            // Update ke API
+            const res = await fetch(`http://localhost:5283/api/v1/cart/update/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ qty })
+            });
+
+            if (!res.ok) {
+                alert('Gagal memperbarui kuantitas.');
+                return;
+            }
+
+            const data = await res.json();
+
+            // Update tampilan
+            qtyElement.textContent = data.qty;
+            subtotalElement.textContent = `Rp ${data.subtotal.toLocaleString('id-ID')}`;
+
+            // Update total keseluruhan
+            let total = 0;
+            document.querySelectorAll('.subtotal').forEach(s => {
+                total += parseInt(s.textContent.replace(/\D/g, '')) || 0;
+            });
+            document.getElementById('total-price').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+        });
+    });
+    document.querySelectorAll('.qty-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const action = btn.dataset.action;
+            const parent = btn.closest('.cart-item');
+            const qtyElement = parent.querySelector('.qty');
+            const subtotalElement = parent.querySelector('.subtotal');
+            const id = parent.dataset.id;
+
+            let qty = parseInt(qtyElement.textContent);
+            qty = action === 'plus' ? qty + 1 : qty - 1;
+            if (qty < 1 || qty > 99) return;
+
+            // Update ke API
+            const res = await fetch(`http://localhost:5283/api/v1/cart/update/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ qty })
+            });
+
+            if (!res.ok) {
+                alert('Gagal memperbarui kuantitas.');
+                return;
+            }
+
+            const data = await res.json();
+
+            // Update tampilan qty dan subtotal
+            qtyElement.textContent = data.qty;
+            subtotalElement.textContent = `Rp ${data.subtotal.toLocaleString('id-ID')}`;
+
+            // Update ulang seluruh ringkasan
+            updateSummary();
+        });
+    });
+
+    // Fungsi ringkasan real-time
+    function updateSummary() {
+        let subtotal = 0;
+        let diskon = 0;
+
+        document.querySelectorAll('.cart-item').forEach(item => {
+            const hargaNormal = parseInt(item.querySelector('.subtotal').textContent.replace(/\D/g, '')) || 0;
+            subtotal += hargaNormal;
+            const normalText = item.querySelector('.line-through');
+            if (normalText) {
+                const normal = parseInt(normalText.textContent.replace(/\D/g, '')) || 0;
+                diskon += (normal - hargaNormal);
+            }
+        });
+
+        const total = subtotal;
+        document.getElementById('subtotal-price').textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
+        document.getElementById('discount-amount').textContent = `- Rp ${diskon.toLocaleString('id-ID')}`;
+        document.getElementById('total-price').textContent = `Rp ${(subtotal).toLocaleString('id-ID')}`;
+    }
+    // Hapus produk dari keranjang
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const id = btn.dataset.id;
+            if (!confirm('Hapus produk ini dari keranjang?')) return;
+
+            const res = await fetch(`http://localhost:5283/api/v1/cart/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                const item = btn.closest('.cart-item');
+                item.style.transition = "opacity 0.3s";
+                item.style.opacity = "0";
+                setTimeout(() => item.remove(), 300);
+
+                updateSummary();
+                alert('Produk dihapus dari keranjang.');
+            } else {
+                alert('Gagal menghapus produk.');
+            }
+        });
+    });
+    </script>
+}
+
+    </script>
+}

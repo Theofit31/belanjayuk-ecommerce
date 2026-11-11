@@ -1,0 +1,112 @@
+@page
+@model BelanjaYuk_ASPNET8_Frontend.Pages.Seller.RegisterModel
+@{
+    ViewData["Title"] = "Daftar Penjual";
+}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-gray-50 flex flex-col items-center py-8">
+    <div class="w-full max-w-3xl bg-white p-8 rounded-2xl shadow-lg">
+        <h1 class="text-2xl font-bold text-blue-600 mb-2">Daftar sebagai Seller</h1>
+        <p class="text-gray-500 mb-6">Isi informasi toko Anda dengan lengkap untuk mulai berjualan di BelanjaYuk.</p>
+
+        <form method="post" asp-page-handler="Create" id="sellerForm" class="space-y-6">
+            <!-- Nama Toko -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Nama Toko</label>
+                <input asp-for="Input.SellerName" id="sellerName" class="mt-1 w-full border p-2 rounded-lg" placeholder="Contoh: Toko Maju Jaya" />
+                <span asp-validation-for="Input.SellerName" class="text-red-500 text-sm"></span>
+            </div>
+
+            <!-- URL Toko -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">URL Toko (otomatis)</label>
+                <input asp-for="Input.SellerCode" id="sellerCode" class="mt-1 w-full border p-2 rounded-lg text-gray-600" readonly />
+                <small class="text-gray-400">URL publik: belanjayuk.com/s/<span>@Model.Input.SellerCode</span></small>
+                <span asp-validation-for="Input.SellerCode" class="text-red-500 text-sm"></span>
+            </div>
+
+            <!-- No. HP -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">No. HP Toko (opsional)</label>
+                <input asp-for="Input.PhoneNumber" class="mt-1 w-full border p-2 rounded-lg" placeholder="08xxx / +628xx" />
+                <span asp-validation-for="Input.PhoneNumber" class="text-red-500 text-sm"></span>
+            </div>
+
+            <!-- Deskripsi -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Deskripsi / Detail Profil</label>
+                <textarea asp-for="Input.SellerDesc" id="descText" class="mt-1 w-full border p-2 rounded-lg" rows="4"
+                          placeholder="Ceritakan tentang toko Anda, produk, jam operasional, dsb."></textarea>
+                <div class="text-right text-sm text-gray-400">
+                    <span id="descCount">0</span>/2000 karakter
+                </div>
+                <span asp-validation-for="Input.SellerDesc" class="text-red-500 text-sm"></span>
+            </div>
+
+            <!-- Alamat -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Alamat Lengkap</label>
+                <textarea asp-for="Input.Address" class="mt-1 w-full border p-2 rounded-lg" rows="3"
+                          placeholder="Isi lengkap: Provinsi, Kota, Kecamatan, Kode Pos, dan detail alamat toko."></textarea>
+                <span asp-validation-for="Input.Address" class="text-red-500 text-sm"></span>
+            </div>
+
+            <!-- Checkbox -->
+            <div class="flex items-center gap-2">
+                <input asp-for="Input.Agreement" type="checkbox" id="agreement" />
+                <label for="agreement" class="text-sm text-gray-600">Saya menyetujui ketentuan Seller BelanjaYuk.</label>
+            </div>
+
+            <!-- Tombol -->
+            <div class="flex justify-end gap-3 pt-4">
+                <a href="/Home/Index" class="px-4 py-2 border rounded-lg">Kembali</a>
+                <button type="submit" id="btnSubmit"
+                        class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        disabled>
+                    <span id="btnText">Create Toko</span>
+                    <span id="btnLoading" class="hidden animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 inline-block ml-2"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const nameInput = document.getElementById("sellerName");
+        const codeInput = document.getElementById("sellerCode");
+        const btnSubmit = document.getElementById("btnSubmit");
+        const checkbox = document.getElementById("agreement");
+        const desc = document.getElementById("descText");
+        const counter = document.getElementById("descCount");
+
+        // Auto URL dari nama toko
+        nameInput.addEventListener("input", () => {
+            const code = nameInput.value.trim().toLowerCase()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-z0-9\-]/g, "");
+            codeInput.value = code;
+        });
+
+        // Aktifkan tombol jika setuju 
+        function toggleButton() {
+            btnSubmit.disabled = !checkbox.checked;
+        }
+        checkbox.addEventListener("change", toggleButton);
+        document.addEventListener("DOMContentLoaded", toggleButton);
+
+        // Counter deskripsi
+        desc.addEventListener("input", () => {
+            counter.textContent = desc.value.length;
+        });
+
+        // Feedback loading
+        document.getElementById("sellerForm").addEventListener("submit", () => {
+            btnSubmit.disabled = true;
+            document.getElementById("btnText").textContent = "Menyimpan...";
+            document.getElementById("btnLoading").classList.remove("hidden");
+        });
+    </script>
+}
